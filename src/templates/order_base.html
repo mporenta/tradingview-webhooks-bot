@@ -155,51 +155,64 @@
           }
         });
 
-        // Handle the button click event
-        $('#data_order').on('click', '.close-position', function () {
-          const ticker = $(this).data('ticker');
-          const position = $(this).data('position');
-          const ngrokUrl = $('#ngrokUrl').val();
-          const tokenKey = $('#tokenKey').val();
-          const timestamp = Date.now(); // Unix time in milliseconds
+         // Handle the button click event
+      $('#data_order').on('click', '.close-position', function () {
+        const ticker = $(this).data('ticker');
+        const position = $(this).data('position');
+        const ngrokUrl = $('#ngrokUrl').val();
+        const tokenKey = $('#tokenKey').val();
+        const timestamp = Date.now(); // Unix time in milliseconds
 
-          if (!ngrokUrl || !tokenKey) {
-            $('#responseMessage').html('<div class="alert alert-danger">Please enter the ngrok URL and token key.</div>');
-            return;
-          }
+        if (!ngrokUrl || !tokenKey) {
+          $('#responseMessage').html('<div class="alert alert-danger">Please enter the ngrok URL and token key.</div>');
+          return;
+        }
 
-          const payload = {
-            timestamp: timestamp,
-            ticker: ticker,
-            currency: "USD",
-            timeframe: "S",
-            clientId: 1,
-            key: tokenKey, // Use the entered token key here
-            contract: "stock",
-            orderRef: "cancel_all_test",
-            direction: "strategy.close_all",
-            metrics: [
-              { "name": "entry.limit", "value": 0 },
-              { "name": "entry.stop", "value": 0 },
-              { "name": "exit.limit", "value": 0 },
-              { "name": "exit.stop", "value": 0 },
-              { "name": "qty", "value": -10000000000 },
-              { "name": "price", "value": 4.275 }
-            ]
-          };
+        const payload = {
+          timestamp: timestamp,
+          ticker: ticker,
+          currency: "USD",
+          timeframe: "S",
+          clientId: 1,
+          key: tokenKey,
+          contract: "stock",
+          orderRef: "cancel_all_test",
+          direction: "strategy.close_all",
+          metrics: [
+            { "name": "entry.limit", "value": 0 },
+            { "name": "entry.stop", "value": 0 },
+            { "name": "exit.limit", "value": 0 },
+            { "name": "exit.stop", "value": 0 },
+            { "name": "qty", "value": -10000000000 },
+            { "name": "price", "value": 4.275 }
+          ]
+        };
 
-          // Send a request to close the position
-          $.ajax({
-            url: ngrokUrl,
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(payload),
-            success: function (response) {
-              $('#responseMessage').html('<div class="alert alert-success">Position closed successfully. Response: ' + response.message + '</div>');
-              $('#data_order').DataTable().ajax.reload(); // Reload table data
-            },
-            error: function (error) {
-              $('#responseMessage').html('<div class="alert alert-danger">Failed to close the position. Error: ' + error.responseText + '</div>');
+        // Send a request to close the position
+        $.ajax({
+          url: ngrokUrl,
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify(payload),
+          success: function (response) {
+            let responseHtml = '<div class="alert alert-success">';
+            responseHtml += '<h4>Position closed successfully</h4>';
+            responseHtml += '<pre>' + JSON.stringify(response, null, 2) + '</pre>';
+            responseHtml += '</div>';
+            $('#responseMessage').html(responseHtml);
+            $('#data_order').DataTable().ajax.reload();
+          },
+          error: function (jqXHR, textStatus, errorThrown) {
+            let responseHtml = '<div class="alert alert-danger">';
+            responseHtml += '<h4>Failed to close the position</h4>';
+            responseHtml += '<p><strong>Status:</strong> ' + textStatus + '</p>';
+            responseHtml += '<p><strong>Error:</strong> ' + errorThrown + '</p>';
+            if (jqXHR.responseText) {
+              responseHtml += '<p><strong>Response:</strong></p>';
+              responseHtml += '<pre>' + jqXHR.responseText + '</pre>';
+            }
+            responseHtml += '</div>';
+            $('#responseMessage').html(responseHtml);
             }
           });
         });
