@@ -1,8 +1,9 @@
 # initialize our Flask application
+import logging
 from logging import getLogger, DEBUG
 
 import os
-import logging
+
 import tbot
 from flask import Flask, request, jsonify, render_template, Response
 
@@ -132,9 +133,27 @@ def activate_event():
         return {'active': event.active}
 
 
+
+
 if __name__ == "__main__":
-    port = int(os.getenv("TVWB_HTTPS_PORT", "5000"))
-    if strtobool(os.getenv("TBOT_PRODUCTION", "False")):
-        serve(app, host="0.0.0.0", port=port)
-    else:
-        app.run(debug=True, host="0.0.0.0", port=port)
+    # Configure logging
+    logging.basicConfig(
+        level=logging.DEBUG if not strtobool(os.getenv("TBOT_PRODUCTION", "False")) else logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        handlers=[logging.StreamHandler()]  # Ensure logs are sent to stdout
+    )
+    
+    logger = logging.getLogger(__name__)
+
+    try:
+        port = int(os.getenv("TVWB_HTTPS_PORT", "5000"))
+        is_production = strtobool(os.getenv("TBOT_PRODUCTION", "False"))
+        
+        if is_production:
+            logger.info("Starting in production mode.")
+            serve(app, host="0.0.0.0", port=port)
+        else:
+            logger.info("Starting in development mode with debug.")
+            app.run(debug=True, host="0.0.0.0", port=port)
+    except Exception as e:
+        logger.exception("An error occurred while running the Flask app.")
