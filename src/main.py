@@ -24,19 +24,26 @@ registered_events = [register_event(event) for event in REGISTERED_EVENTS]
 registered_links = [register_link(link, em, am) for link in REGISTERED_LINKS]
 
 app = Flask(__name__)
+from flask import Flask, request, jsonify, render_template, Response
+from flask_cors import CORS
+import os
+
+# Initialize Flask app
+app = Flask(__name__)
 
 # Function to dynamically check and set CORS origins
 def get_cors_origin(origin):
+    # Define the allowed domains
     allowed_domains = [
-        "http://localhost:5000",
-        "https://ngrok.com",
+        "localhost:5000",
+        "ngrok.com",
         "ngrok-free.app"
     ]
 
-    # Allow any subdomain of ngrok.com and ngrok-free.app
+    # Allow specific domains and any subdomain of ngrok.com and ngrok-free.app
     if origin:
         for domain in allowed_domains:
-            if origin == domain or origin.endswith(f".{domain}"):
+            if origin == f"http://{domain}" or origin == f"https://{domain}" or origin.endswith(f".{domain}"):
                 return origin
 
     # Default to None if origin is not allowed
