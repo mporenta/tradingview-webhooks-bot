@@ -5,7 +5,7 @@ import os
 import logging
 import tbot
 from flask import Flask, request, jsonify, render_template, Response
-
+from flask_cors import CORS  # Import flask_cors
 from commons import VERSION_NUMBER, LOG_LOCATION
 from components.actions.base.action import am
 from components.events.base.event import em
@@ -24,6 +24,38 @@ registered_events = [register_event(event) for event in REGISTERED_EVENTS]
 registered_links = [register_link(link, em, am) for link in REGISTERED_LINKS]
 
 app = Flask(__name__)
+
+# Function to dynamically check and set CORS origins
+def get_cors_origin(origin):
+    allowed_domains = [
+        "http://localhost:5000",
+        "https://ngrok.com",
+        "ngrok-free.app"
+    ]
+
+    # Allow any subdomain of ngrok.com and ngrok-free.app
+    if origin:
+        for domain in allowed_domains:
+            if origin == domain or origin.endswith(f".{domain}"):
+                return origin
+
+    # Default to None if origin is not allowed
+    return None
+
+@app.after_request
+def apply_cors(response):
+    origin = request.headers.get('Origin')
+    allowed_origin = get_cors_origin(origin)
+    if allowed_origin:
+        response.headers.add('Access-Control-Allow-Origin', allowed_origin)
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        # If credentials support is needed
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
+
+# Enable CORS with a default setup
+CORS(app, resources={r"/*": {"origins": get_cors_origin}})
 
 # configure logging
 logger = get_logger(__name__)
@@ -138,3 +170,5 @@ if __name__ == "__main__":
         serve(app, host="0.0.0.0", port=port)
     else:
         app.run(debug=True, host="0.0.0.0", port=port)
+
+
