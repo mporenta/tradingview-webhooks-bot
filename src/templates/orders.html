@@ -1,59 +1,31 @@
 <!DOCTYPE html>
 {% extends "order_base.html" %}
-
 {% block content %}
-<table id="data_order" class="table table-info table-hover">
-    <thead>
-        <tr>
-            <th>Action</th>
-            <th>TBOT_TIME</th>
-            <th>ORD_TIME</th>
-            <th>TICKER</th>
-            <th>TV_Close</th>
-            <th>ACTION</th>
-            <th>TYPE</th>
-            <th>QTY</th>
-            <th>LIMIT</th>
-            <th>STOP</th>
-            <th>ORDERID</th>
-            <th>ORDERREF</th>
-            <th>STATUS</th>
-            <th>POS</th>
-            <th>MRKVAL</th>
-            <th>AVGF</th>
-            <th>UnrealPnL</th>
-            <th>RealPnL</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in rows %}
-        <tr>
-            <td>
-                {% if row["unrealizedpnl"] != 0 %}
-                <button class="btn btn-warning close-position" data-ticker="{{ row['ticker'] }}" data-position="{{ row['position'] }}">
-                    Close Position
-                </button>
-                {% endif %}
-            </td>
-            <td>{{ row["uniquekey"] }}</td>
-            <td>{{ row["timestamp"] }}</td>
-            <td>{{ row["ticker"] }}</td>
-            <td>{{ row["tv_price"] }}</td>
-            <td>{{ row["action"] }}</td>
-            <td>{{ row["ordertype"] }}</td>
-            <td>{{ row["qty"] }}</td>
-            <td>{{ row["lmtprice"] }}</td>
-            <td>{{ row["auxprice"] }}</td>
-            <td>{{ row["orderid"] }}</td>
-            <td>{{ row["orderref"] }}</td>
-            <td>{{ row["orderstatus"] }}</td>
-            <td>{{ row["position"] }}</td>
-            <td>{{ row["mrkvalue"] }}</td>
-            <td>{{ row["avgfillprice"] }}</td>
-            <td>{{ row["unrealizedpnl"] }}</td>
-            <td>{{ row["realizedpnl"] }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <table id="data_order" class="table table-info table-hover">
+        <thead>
+            <tr>
+                <th>Action</th>
+                <th>TBOT_TIME</th>
+                <th>ORD_TIME</th>
+                <th>TICKER</th>
+                <th>TV_Close</th>
+                <th>ACTION</th>
+                <th>TYPE</th>
+                <th>QTY</th>
+                <th>LIMIT</th>
+                <th>STOP</th>
+                <th>ORDERID</th>
+                <th>ORDERREF</th>
+                <th>STATUS</th>
+                <th>POS</th>
+                <th>MRKVAL</th>
+                <th>AVGF</th>
+                <th>UnrealPnL</th>
+                <th>RealPnL</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- DataTables will populate this -->
+        </tbody>
+    </table>
 {% endblock %}
