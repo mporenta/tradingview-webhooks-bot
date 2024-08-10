@@ -29,12 +29,17 @@ def get_db():
     """Get the database"""
     database = getattr(g, "_database", None)
     if database is None:
-        database = g._database = sqlite3.connect(
-            os.environ.get("TBOT_DB_OFFICE", "/run/tbot/tbot_sqlite3")
-        )
-        database.row_factory = sqlite3.Row
+        try:
+            database = g._database = sqlite3.connect(
+                os.environ.get("TBOT_DB_OFFICE", "/run/tbot/tbot_sqlite3"),
+                timeout=10  # Add timeout to handle database locks
+            )
+            database.row_factory = sqlite3.Row
+            logger.info("Database connection established.")
+        except sqlite3.Error as e:
+            logger.error(f"Database connection error: {e}")
+            raise
     return database
-
 
 def query_db(query, args=()):
     """Query database"""
@@ -43,8 +48,9 @@ def query_db(query, args=()):
         rows = cur.fetchall()
         unpacked = [{k: item[k] for k in item.keys()} for item in rows]
         cur.close()
+        logger.info("Database query executed successfully.")
     except Exception as err:
-        logger.error(f"Failed to execute: {err}")
+        logger.error(f"Failed to execute query: {query} with error: {err}")
         return []
     return unpacked
 
