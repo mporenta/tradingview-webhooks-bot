@@ -23,7 +23,7 @@ registered_actions = [register_action(action) for action in REGISTERED_ACTIONS]
 registered_events = [register_event(event) for event in REGISTERED_EVENTS]
 registered_links = [register_link(link, em, am) for link in REGISTERED_LINKS]
 
-# Initialize Flask app
+# Initialize Flask app now
 app = Flask(__name__)
 
 # Function to dynamically check and set CORS origins
