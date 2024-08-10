@@ -23,11 +23,6 @@ registered_actions = [register_action(action) for action in REGISTERED_ACTIONS]
 registered_events = [register_event(event) for event in REGISTERED_EVENTS]
 registered_links = [register_link(link, em, am) for link in REGISTERED_LINKS]
 
-app = Flask(__name__)
-from flask import Flask, request, jsonify, render_template, Response
-from flask_cors import CORS
-import os
-
 # Initialize Flask app
 app = Flask(__name__)
 
