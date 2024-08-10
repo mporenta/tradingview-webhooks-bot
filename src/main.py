@@ -76,29 +76,39 @@ schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
-    if request.method == 'GET':
+    try:
         # Check if GUI key file exists
         try:
             with open('.gui_key', 'r') as key_file:
                 gui_key = key_file.read().strip()
                 # Check that the GUI key from file matches the GUI key from request
                 if gui_key != request.args.get('guiKey', None):
+                    logger.error('Access denied due to GUI key mismatch.')
                     return 'Access Denied', 401
 
-        # If GUI key file does not exist, the tvwb.py did not start GUI in closed mode
         except FileNotFoundError:
             logger.warning('GUI key file not found. Open GUI mode detected.')
-            return render_template('dashboard.html')
 
-        # Serve the dashboard
-        action_list = am.get_all()
-        return render_template(
-            template_name_or_list='dashboard.html',
-            schema_list=schema_list,
-            action_list=action_list,
-            event_list=em.get_all(),
-            version=VERSION_NUMBER
-        )
+        # Fetch data for dashboard rendering
+        try:
+            action_list = am.get_all()
+            event_list = em.get_all()
+            logger.debug(f"Actions: {action_list}, Events: {event_list}")
+
+            return render_template(
+                'dashboard.html',
+                schema_list=schema_list,
+                action_list=action_list,
+                event_list=event_list,
+                version=VERSION_NUMBER
+            )
+        except Exception as e:
+            logger.error(f"Error fetching data for dashboard: {e}", exc_info=True)
+            return 'An error occurred while loading the dashboard.', 500
+    except Exception as e:
+        logger.error(f"Unexpected error in dashboard route: {e}", exc_info=True)
+        return 'A server error occurred.', 500
+
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
