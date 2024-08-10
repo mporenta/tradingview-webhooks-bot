@@ -37,35 +37,13 @@
         <label for="tokenKey" class="form-label">Token Key</label>
         <input type="text" class="form-control" id="tokenKey" placeholder="Enter token key">
       </div>
-      <div id="responseMessage" class="mb-3"></div>
-      <table id="data_order" class="table table-info table-hover">
-        <thead>
-          <tr>
-            <th>Action</th>
-            <th>TBOT_TIME</th>
-            <th>ORD_TIME</th>
-            <th>TICKER</th>
-            <th>TV_Close</th>
-            <th>ACTION</th>
-            <th>TYPE</th>
-            <th>QTY</th>
-            <th>LIMIT</th>
-            <th>STOP</th>
-            <th>ORDERID</th>
-            <th>ORDERREF</th>
-            <th>STATUS</th>
-            <th>POS</th>
-            <th>MRKVAL</th>
-            <th>AVGF</th>
-            <th>UnrealPnL</th>
-            <th>RealPnL</th>
-          </tr>
-        </thead>
-      </table>
+      <div id="responseMessage" class="mb-3"></div> <!-- For displaying POST response -->
+      {% block content %}{% endblock %}
     </div>
     <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.js"></script>
+    {% block scripts %}
     <script>
       $(document).ready(function () {
         var dataTable = $('#data_order').DataTable({
@@ -239,5 +217,6 @@
         }
       });
     </script>
+    {% endblock %}
   </body>
 </html>
