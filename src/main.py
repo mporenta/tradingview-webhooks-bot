@@ -1,11 +1,8 @@
-# initialize our Flask application
-from logging import getLogger, DEBUG
-
+from flask import Flask, request, jsonify, render_template, Response
+from flask_cors import CORS
 import os
 import logging
 import tbot
-from flask import Flask, request, jsonify, render_template, Response
-
 from commons import VERSION_NUMBER, LOG_LOCATION
 from components.actions.base.action import am
 from components.events.base.event import em
@@ -15,18 +12,44 @@ from utils.log import get_logger
 from utils.register import register_action, register_event, register_link
 from distutils.util import strtobool
 
-# register actions, events, links
-from settings import REGISTERED_ACTIONS, REGISTERED_EVENTS, REGISTERED_LINKS
-from waitress import serve
-
-registered_actions = [register_action(action) for action in REGISTERED_ACTIONS]
-registered_events = [register_event(event) for event in REGISTERED_EVENTS]
-registered_links = [register_link(link, em, am) for link in REGISTERED_LINKS]
-
+# Initialize Flask app
 app = Flask(__name__)
 
-# configure logging
+# Function to dynamically check and set CORS origins
+'''
+def get_cors_origin(origin):
+    allowed_domains = [
+        "localhost:5000",
+        "ngrok.com",
+        "ngrok-free.app"
+    ]
+
+    if origin:
+        for domain in allowed_domains:
+            if origin == f"http://{domain}" or origin == f"https://{domain}" or origin.endswith(f".{domain}"):
+                return True
+    return False
+'''
+# Enable CORS
+CORS(app)
+
+# Configure logging
 logger = get_logger(__name__)
+app.logger.setLevel(logging.DEBUG)  # Set Flask's logger to DEBUG level
+
+# Add a handler to log to the console
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)  # Set handler to DEBUG level
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] in %(module)s: %(message)s')
+console_handler.setFormatter(formatter)
+app.logger.addHandler(console_handler)
+
+# Log all incoming requests
+@app.before_request
+def log_request_info():
+    app.logger.debug(f"Received {request.method} request for {request.url}")
+    app.logger.debug(f"Headers: {request.headers}")
+    app.logger.debug(f"Body: {request.get_data()}")
 
 app.add_url_rule("/", view_func=tbot.get_main)
 app.add_url_rule("/orders", view_func=tbot.get_orders)
@@ -42,35 +65,25 @@ app.teardown_appcontext(tbot.close_connection)
 
 schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
-
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
-    if request.method == 'GET':
-
-        # check if gui key file exists
-        try:
+    try:
+        if request.method == 'GET':
             with open('.gui_key', 'r') as key_file:
                 gui_key = key_file.read().strip()
-                # check that the gui key from file matches the gui key from request
-                if gui_key == request.args.get('guiKey', None):
-                    pass
-                else:
+                if gui_key != request.args.get('guiKey', None):
                     return 'Access Denied', 401
+    except FileNotFoundError:
+        logger.warning('GUI key file not found. Open GUI mode detected.')
 
-        # if gui key file does not exist, the tvwb.py did not start gui in closed mode
-        except FileNotFoundError:
-            logger.warning('GUI key file not found. Open GUI mode detected.')
-
-        # serve the dashboard
-        action_list = am.get_all()
-        return render_template(
-            template_name_or_list='dashboard.html',
-            schema_list=schema_list,
-            action_list=action_list,
-            event_list=registered_events,
-            version=VERSION_NUMBER
-        )
-
+    action_list = am.get_all()
+    return render_template(
+        template_name_or_list='dashboard.html',
+        schema_list=schema_list,
+        action_list=action_list,
+        event_list=registered_events,
+        version=VERSION_NUMBER
+    )
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
@@ -85,10 +98,9 @@ def webhook():
         logger.debug(f"Request Data: {jsondic_data}")
         triggered_events = []
         for event in em.get_all():
-            if event.webhook:
-                if event.key == jsondic_data["key"]:
-                    event.trigger(data=jsondic_data)
-                    triggered_events.append(event.name)
+            if event.webhook and event.key == jsondic_data["key"]:
+                event.trigger(data=jsondic_data)
+                triggered_events.append(event.name)
 
         if not triggered_events:
             logger.warning(f"No events triggered for webhook request {jsondic_data}")
@@ -103,22 +115,18 @@ def webhook():
 
     return Response(status=200)
 
-
 @app.route("/logs", methods=["GET"])
 def get_logs():
     if request.method == 'GET':
-        log_file = open(LOG_LOCATION, 'r')
-        logs = [LogEvent().from_line(log) for log in log_file.readlines()]
-        return jsonify([log.as_json() for log in logs])
-
+        with open(LOG_LOCATION, 'r') as log_file:
+            logs = [LogEvent().from_line(log) for log in log_file.readlines()]
+            return jsonify([log.as_json() for log in logs])
 
 @app.route("/event/active", methods=["POST"])
 def activate_event():
     if request.method == 'POST':
-        # get query parameters
         event_name = request.args.get('event', None)
 
-        # if event name is not provided, or cannot be found, 404
         if event_name is None:
             return Response(f'Event name cannot be empty ({event_name})', status=404)
         try:
@@ -126,15 +134,20 @@ def activate_event():
         except ValueError:
             return Response(f'Cannot find event with name: {event_name}', status=404)
 
-        # set event to active or inactive, depending on current state
         event.active = request.args.get('active', True) == 'true'
         logger.info(f'Event {event.name} active set to: {event.active}, via POST request')
         return {'active': event.active}
 
-
 if __name__ == "__main__":
-    port = int(os.getenv("TVWB_HTTPS_PORT", "5000"))
-    if strtobool(os.getenv("TBOT_PRODUCTION", "False")):
-        serve(app, host="0.0.0.0", port=port)
-    else:
-        app.run(debug=True, host="0.0.0.0", port=port)
+    try:
+        port = int(os.getenv("TVWB_HTTPS_PORT", "5000"))
+        is_production = strtobool(os.getenv("TBOT_PRODUCTION", "False"))
+        
+        if is_production:
+            logger.info("Starting in production mode.")
+            serve(app, host="0.0.0.0", port=port)
+        else:
+            logger.info("Starting in development mode with debug.")
+            app.run(debug=True, host="0.0.0.0", port=port)
+    except Exception as e:
+        logger.exception("An error occurred while starting the Flask app.")
