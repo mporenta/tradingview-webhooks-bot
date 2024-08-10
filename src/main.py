@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template, Response
 from flask_cors import CORS
 from dotenv import load_dotenv
+from flask import Blueprint, current_app
 import os
 import logging
 import tbot
@@ -48,6 +49,8 @@ console_handler.setLevel(logging.DEBUG)  # Set handler to DEBUG level
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] in %(module)s: %(message)s')
 console_handler.setFormatter(formatter)
 app.logger.addHandler(console_handler)
+logging.basicConfig(filename='/var/log/flask.log', level=logging.DEBUG, format=f'%(asctime)s %(levelname)s %('f'name)s %(threadName)s : %(message)s')
+current_app.logger.info("Testing Testing")
 
 def get_logger(name, level=logging.DEBUG):
     fmt = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
