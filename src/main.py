@@ -1,7 +1,7 @@
 # initialize our Flask application
 import logging
 from logging import getLogger, DEBUG
-
+from flask_cors import CORS
 import os
 
 import tbot
@@ -28,6 +28,9 @@ app = Flask(__name__)
 
 # configure logging
 logger = get_logger(__name__)
+
+# Enable CORS
+CORS(app)
 
 app.add_url_rule("/", view_func=tbot.get_main)
 app.add_url_rule("/orders", view_func=tbot.get_orders)
