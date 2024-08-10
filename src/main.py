@@ -4,7 +4,7 @@ from logging import getLogger, DEBUG
 import os
 import logging
 import tbot
-from flask import Flask, request, jsonify, render_template, Response # type: ignore
+from flask import Flask, request, jsonify, render_template, Response
 
 from commons import VERSION_NUMBER, LOG_LOCATION
 from components.actions.base.action import am
@@ -13,11 +13,11 @@ from components.logs.log_event import LogEvent
 from components.schemas.trading import Order, Position
 from utils.log import get_logger
 from utils.register import register_action, register_event, register_link
-from distutils.util import strtobool # type: ignore
+from distutils.util import strtobool
 
 # register actions, events, links
 from settings import REGISTERED_ACTIONS, REGISTERED_EVENTS, REGISTERED_LINKS
-from waitress import serve # type: ignore
+from waitress import serve
 
 registered_actions = [register_action(action) for action in REGISTERED_ACTIONS]
 registered_events = [register_event(event) for event in REGISTERED_EVENTS]
@@ -102,30 +102,6 @@ def webhook():
                     logger.info(request.environ["HTTP_X_FORWARDED_FOR"])
 
     return Response(status=200)
-
-@app.route("/close_position", methods=["POST"])
-def close_position():
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "Invalid data"}), 400
-
-    try:
-        # Assuming 'ticker' and 'qty' are part of your payload
-        ticker = data['ticker']
-        quantity = data['qty']
-        action = "BUY" if data['qty'] < 0 else "SELL"
-
-        # Placeholder: Logic to send close order to IB
-        logger.info(f"Request to close position for {ticker} with action {action} and qty {quantity}")
-        
-        # This would be where you interface with the TradingBoat or IB API to execute the order
-        # Example: result = trading_boat_api.close_position(ticker, quantity, action)
-        
-        return jsonify({"message": "Close position request processed successfully."}), 200
-    except Exception as e:
-        logger.error(f"Failed to process close position: {e}")
-        return jsonify({"error": "Failed to process request"}), 500
-
 
 
 @app.route("/logs", methods=["GET"])
