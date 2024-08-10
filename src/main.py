@@ -103,24 +103,32 @@ schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
-    try:
-        if request.method == 'GET':
+    if request.method == 'GET':
+
+        # check if gui key file exists
+        try:
             with open('.gui_key', 'r') as key_file:
                 gui_key = key_file.read().strip()
-                if gui_key != request.args.get('guiKey', None):
+                # check that the gui key from file matches the gui key from request
+                if gui_key == request.args.get('guiKey', None):
+                    pass
+                else:
                     return 'Access Denied', 401
-    except FileNotFoundError:
-        logger.warning('GUI key file not found. Open GUI mode detected.')
 
-    action_list = am.get_all()
-    return render_template(
-        template_name_or_list='dashboard.html',
-        schema_list=schema_list,
-        action_list=action_list,
-        event_list=registered_events,
-        version=VERSION_NUMBER
-    )
+        # if gui key file does not exist, the tvwb.py did not start gui in closed mode
+        except FileNotFoundError:
+            logger.warning('GUI key file not found. Open GUI mode detected.')
 
+        # serve the dashboard
+        action_list = am.get_all()
+        return render_template(
+            template_name_or_list='dashboard.html',
+            schema_list=schema_list,
+            action_list=action_list,
+            event_list=registered_events,
+            version=VERSION_NUMBER
+        )
+        
 @app.route("/webhook", methods=["POST"])
 def webhook():
     if request.method == "POST":
