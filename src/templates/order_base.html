@@ -174,7 +174,7 @@
             currency: "USD",
             timeframe: "S",
             clientId: 1,
-            key: "WebhookReceived:fcbd3d",
+            key: tokenKey, // Use the entered token key here
             contract: "stock",
             orderRef: "cancel_all_test",
             direction: "strategy.close_all",
@@ -192,9 +192,6 @@
           $.ajax({
             url: ngrokUrl,
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${tokenKey}`
-            },
             contentType: 'application/json',
             data: JSON.stringify(payload),
             success: function (response) {
