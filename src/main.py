@@ -104,6 +104,7 @@ app.teardown_appcontext(tbot.close_connection)
 
 schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
+@blueprint.route("/dashboard", methods=['GET'])
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     if request.method == 'GET':
@@ -121,6 +122,8 @@ def dashboard():
         # if gui key file does not exist, the tvwb.py did not start gui in closed mode
         except FileNotFoundError:
             logger.warning('GUI key file not found. Open GUI mode detected.')
+            current_app.logger.info("dashboard loaded")
+                return render_template('dashboard/dashboard.html')
 
         # serve the dashboard
         action_list = am.get_all()
