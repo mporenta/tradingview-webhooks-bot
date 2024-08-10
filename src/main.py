@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, render_template, Response
 from flask_cors import CORS
 from dotenv import load_dotenv
-from flask import Blueprint, current_app
 import os
 import logging
 import tbot
@@ -14,44 +13,16 @@ from utils.log import get_logger
 from utils.register import register_action, register_event, register_link
 from distutils.util import strtobool
 
-# Initialize Flask app
-app = Flask(__name__)
-
 # Load environment variables from .env file
 load_dotenv()
 
+# Initialize Flask app
+app = Flask(__name__)
 
-# Function to dynamically check and set CORS origins
-'''
-def get_cors_origin(origin):
-    allowed_domains = [
-        "localhost:5000",
-        "ngrok.com",
-        "ngrok-free.app"
-    ]
-
-    if origin:
-        for domain in allowed_domains:
-            if origin == f"http://{domain}" or origin == f"https://{domain}" or origin.endswith(f".{domain}"):
-                return True
-    return False
-'''
-# Enable CORS
+# Enable CORS for all routes
 CORS(app)
 
 # Configure logging
-logger = get_logger(__name__)
-app.logger.setLevel(logging.DEBUG)  # Set Flask's logger to DEBUG level
-
-# Add a handler to log to the console
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)  # Set handler to DEBUG level
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] in %(module)s: %(message)s')
-console_handler.setFormatter(formatter)
-app.logger.addHandler(console_handler)
-logging.basicConfig(filename='/var/log/flask.log', level=logging.DEBUG, format=f'%(asctime)s %(levelname)s %('f'name)s %(threadName)s : %(message)s')
-current_app.logger.info("Testing Testing")
-
 def get_logger(name, level=logging.DEBUG):
     fmt = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
     logger = logging.getLogger(name)
@@ -72,7 +43,6 @@ def get_logger(name, level=logging.DEBUG):
     logger.setLevel(level)
     return logger
 
-# Configure logging
 logger = get_logger(__name__)
 app.logger.handlers = logger.handlers  # Use the same handlers for the Flask logger
 app.logger.setLevel(logger.level)
@@ -89,7 +59,7 @@ def handle_exception(e):
     app.logger.error(f"Exception occurred: {e}", exc_info=True)
     return jsonify(error=str(e)), 500
 
-# Define your routes as usual
+# Register routes and handlers
 app.add_url_rule("/", view_func=tbot.get_main)
 app.add_url_rule("/orders", view_func=tbot.get_orders)
 app.add_url_rule("/alerts", view_func=tbot.get_alerts)
@@ -104,37 +74,32 @@ app.teardown_appcontext(tbot.close_connection)
 
 schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
-@blueprint.route("/dashboard", methods=['GET'])
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     if request.method == 'GET':
-
-        # check if gui key file exists
+        # Check if GUI key file exists
         try:
             with open('.gui_key', 'r') as key_file:
                 gui_key = key_file.read().strip()
-                # check that the gui key from file matches the gui key from request
-                if gui_key == request.args.get('guiKey', None):
-                    pass
-                else:
+                # Check that the GUI key from file matches the GUI key from request
+                if gui_key != request.args.get('guiKey', None):
                     return 'Access Denied', 401
 
-        # if gui key file does not exist, the tvwb.py did not start gui in closed mode
+        # If GUI key file does not exist, the tvwb.py did not start GUI in closed mode
         except FileNotFoundError:
             logger.warning('GUI key file not found. Open GUI mode detected.')
-            current_app.logger.info("dashboard loaded")
-                return render_template('dashboard/dashboard.html')
+            return render_template('dashboard.html')
 
-        # serve the dashboard
+        # Serve the dashboard
         action_list = am.get_all()
         return render_template(
             template_name_or_list='dashboard.html',
             schema_list=schema_list,
             action_list=action_list,
-            event_list=registered_events,
+            event_list=em.get_all(),
             version=VERSION_NUMBER
         )
-        
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     if request.method == "POST":
