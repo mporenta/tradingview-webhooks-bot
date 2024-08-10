@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template, Response
 from flask_cors import CORS
+from dotenv import load_dotenv
 import os
 import logging
 import tbot
@@ -14,6 +15,10 @@ from distutils.util import strtobool
 
 # Initialize Flask app
 app = Flask(__name__)
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 # Function to dynamically check and set CORS origins
 '''
@@ -44,6 +49,31 @@ formatter = logging.Formatter('%(asctime)s [%(levelname)s] in %(module)s: %(mess
 console_handler.setFormatter(formatter)
 app.logger.addHandler(console_handler)
 
+def get_logger(name, level=logging.DEBUG):
+    fmt = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+    logger = logging.getLogger(name)
+
+    # Avoid duplicate handlers
+    if not logger.hasHandlers():
+        # Console handler
+        ch = logging.StreamHandler()
+        ch.setFormatter(fmt)
+        logger.addHandler(ch)
+
+        # File handler
+        logfile = os.getenv('TBOT_LOGFILE', 'app.log')  # Default to app.log if TBOT_LOGFILE is not set
+        fh = logging.FileHandler(logfile)
+        fh.setFormatter(fmt)
+        logger.addHandler(fh)
+
+    logger.setLevel(level)
+    return logger
+
+# Configure logging
+logger = get_logger(__name__)
+app.logger.handlers = logger.handlers  # Use the same handlers for the Flask logger
+app.logger.setLevel(logger.level)
+
 # Log all incoming requests
 @app.before_request
 def log_request_info():
@@ -51,6 +81,12 @@ def log_request_info():
     app.logger.debug(f"Headers: {request.headers}")
     app.logger.debug(f"Body: {request.get_data()}")
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    app.logger.error(f"Exception occurred: {e}", exc_info=True)
+    return jsonify(error=str(e)), 500
+
+# Define your routes as usual
 app.add_url_rule("/", view_func=tbot.get_main)
 app.add_url_rule("/orders", view_func=tbot.get_orders)
 app.add_url_rule("/alerts", view_func=tbot.get_alerts)
@@ -142,9 +178,10 @@ if __name__ == "__main__":
     try:
         port = int(os.getenv("TVWB_HTTPS_PORT", "5000"))
         is_production = strtobool(os.getenv("TBOT_PRODUCTION", "False"))
-        
+
         if is_production:
             logger.info("Starting in production mode.")
+            from waitress import serve  # Ensure waitress is installed for production
             serve(app, host="0.0.0.0", port=port)
         else:
             logger.info("Starting in development mode with debug.")
