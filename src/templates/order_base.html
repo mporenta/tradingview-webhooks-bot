@@ -42,120 +42,101 @@
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.js"></script>
     {% block scripts %}
-    <script>
-      $(document).ready(function () {
-        $('#data_order').DataTable({
-          scrollX: true,
-          order: [[0, 'desc']],
-          ajax: '/orders/data',
-          processing: true,
-          language: {
-            "processing": '<div class="spinner-border" style="width: 3rem; height: 3rem;" role="status"><span class="visually-hidden">Loading...</span></div><div class="spinner-grow" style="width: 3rem; height: 3rem;" role="status"><span class="visually-hidden">Loading...</span></div>'
+   <script>
+    $(document).ready(function () {
+      var dataTable = $('#data_order').DataTable({
+        scrollX: true,
+        order: [[0, 'desc']],
+        ajax: '/orders/data',
+        processing: true,
+        language: {
+          "processing": '<div class="spinner-border" style="width: 3rem; height: 3rem;" role="status"><span class="visually-hidden">Loading...</span></div><div class="spinner-grow" style="width: 3rem; height: 3rem;" role="status"><span class="visually-hidden">Loading...</span></div>'
+        },
+        columns: [
+          { data: null }, // Placeholder for the button
+          { data: 'uniquekey' },
+          { data: 'timestamp' },
+          { data: 'ticker' },
+          { data: 'tv_price' },
+          { 
+            data: 'action',
+            render: function (data, type) {
+              if (type === 'display') {
+                let color = 'orange';
+                switch (data) {
+                  case 'SELL':
+                    color = 'red';
+                    break;
+                  case 'BUY':
+                    color = 'green';
+                    break;
+                }
+                return '<span style="color:' + color + '">' + data + '</span>';
+              }
+              return data;
+            },
           },
-          columns: [
-            { data: null }, // Placeholder for the button
-            { data: 'uniquekey' },
-            { data: 'timestamp' },
-            { data: 'ticker' },
-            { data: 'tv_price' },
-            {
-              data: 'action',
-              render: function (data, type) {
-                if (type === 'display') {
-                  let color = 'orange';
-                  switch (data) {
-                    case 'SELL':
-                      color = 'red';
-                      break;
-                    case 'BUY':
-                      color = 'green';
-                      break;
-                  }
-                  return '<span style="color:' + color + '">' + data + '</span>';
-                }
-                return data;
-              },
+          { data: 'ordertype' },
+          { data: 'qty' },
+          { data: 'lmtprice' },
+          { data: 'auxprice' },
+          { data: 'orderid' },
+          { data: 'orderref' },
+          { data: 'orderstatus' },
+          { 
+            data: 'position',
+            render: function (data, type) {
+              if (type === 'display') {
+                let color = data >= 0 ? 'black' : 'red';
+                return '<span style="color:' + color + '">' + data + '</span>';
+              }
+              return data;
             },
-            { data: 'ordertype' },
-            { data: 'qty' },
-            { data: 'lmtprice' },
-            { data: 'auxprice' },
-            { data: 'orderid' },
-            { data: 'orderref' },
-            { data: 'orderstatus' },
-            {
-              data: 'position',
-              render: function (data, type) {
-                if (type === 'display') {
-                  let color = 'red';
-                  if (data >= 0) {
-                    color = 'black';
-                  }
-                  return '<span style="color:' + color + '">' + data + '</span>';
-                }
-                return data;
-              },
+          },
+          { data: 'mrkvalue' },
+          { 
+            data: 'avgfillprice',
+            render: function (data, type) {
+              var number = $.fn.dataTable.render.number('', '.', 2, '').display(data);
+              if (type === 'display') {
+                let color = number >= 0 ? 'black' : 'green';
+                return '<span style="color:' + color + '">' + number + '</span>';
+              }
+              return number;
             },
-            { data: 'mrkvalue' },
-            {
-              data: 'avgfillprice',
-              render: function (data, type) {
-                var number = $.fn.dataTable.render
-                  .number('', '.', 2, '')
-                  .display(data);
-                if (type === 'display') {
-                  let color = 'green';
-                  if (number >= 0) {
-                    color = 'black';
-                  }
-                  return '<span style="color:' + color + '">' + number + '</span>';
-                }
-                return number;
-              },
+          },
+          { 
+            data: 'unrealizedpnl',
+            render: function (data, type) {
+              var number = $.fn.dataTable.render.number('', '.', 2, '').display(data);
+              if (type === 'display' || type === 'filter') {
+                let color = number >= 0 ? 'black' : 'red';
+                if (parseFloat(number) === Number.MAX_VALUE) number = 0;
+                return '<span style="color:' + color + '">' + number + '</span>';
+              }
+              return number;
             },
-            {
-              data: 'unrealizedpnl',
-              render: function (data, type) {
-                var number = $.fn.dataTable.render
-                  .number('', '.', 2, '')
-                  .display(data);
-                if (type === 'display' || type === 'filter') {
-                  let color = 'red';
-                  if (number >= 0) {
-                    color = 'black';
-                  }
-                  if (parseFloat(number) === Number.MAX_VALUE)
-                    number = 0;
-                  return '<span style="color:' + color + '">' + number + '</span>';
-                }
-                return number;
-              },
+          },
+          { 
+            data: 'realizedpnl',
+            render: function (data, type) {
+              var number = $.fn.dataTable.render.number('', '.', 2, '').display(data);
+              if (type === 'display') {
+                let color = number >= 0 ? 'black' : 'red';
+                return '<span style="color:' + color + '">' + number + '</span>';
+              }
+              return number;
             },
-            {
-              data: 'realizedpnl',
-              render: function (data, type) {
-                var number = $.fn.dataTable.render
-                  .number('', '.', 2, '')
-                  .display(data);
-                if (type === 'display') {
-                  let color = 'red';
-                  if (number >= 0) {
-                    color = 'black';
-                  }
-                  return '<span style="color:' + color + '">' + number + '</span>';
-                }
-                return number;
-              },
-            },
-          ],
-          createdRow: function (row, data, dataIndex) {
-            if (data.unrealizedpnl != 0) {
-              $('td', row).eq(0).html('<button class="btn btn-warning close-position" data-ticker="' + data.ticker + '" data-position="' + data.position + '">Close Position</button>');
-            }
+          },
+        ],
+        createdRow: function (row, data, dataIndex) {
+          if (data.unrealizedpnl != 0) {
+            $('td', row).eq(0).html('<button class="btn btn-warning close-position" data-ticker="' + data.ticker + '" data-position="' + data.position + '">Close Position</button>');
           }
-        });
+        }
+      });
 
-         // Handle the button click event
+      // Handle the button click event
       $('#data_order').on('click', '.close-position', function () {
         const ticker = $(this).data('ticker');
         const position = $(this).data('position');
@@ -195,16 +176,12 @@
           contentType: 'application/json',
           data: JSON.stringify(payload),
           success: function (response) {
-            let responseHtml = '<div class="alert alert-success">';
-            responseHtml += '<h4>Position closed successfully</h4>';
-            responseHtml += '<pre>' + JSON.stringify(response, null, 2) + '</pre>';
-            responseHtml += '</div>';
-            $('#responseMessage').html(responseHtml);
-            $('#data_order').DataTable().ajax.reload();
+            $('#responseMessage').html('<div class="alert alert-success">Position close request sent successfully. Refreshing data...</div>');
+            refreshDataTable();
           },
           error: function (jqXHR, textStatus, errorThrown) {
             let responseHtml = '<div class="alert alert-danger">';
-            responseHtml += '<h4>Failed to close the position</h4>';
+            responseHtml += '<h4>Failed to send position close request</h4>';
             responseHtml += '<p><strong>Status:</strong> ' + textStatus + '</p>';
             responseHtml += '<p><strong>Error:</strong> ' + errorThrown + '</p>';
             if (jqXHR.responseText) {
@@ -213,11 +190,18 @@
             }
             responseHtml += '</div>';
             $('#responseMessage').html(responseHtml);
-            }
-          });
+          }
         });
       });
-    </script>
+
+      function refreshDataTable() {
+        dataTable.ajax.reload(function(json) {
+          $('#responseMessage').html('<div class="alert alert-info">Data refreshed. Showing latest positions.</div>');
+          console.log('DataTable has been refreshed. New data:', json);
+        }, false);
+      }
+    });
+  </script>
     {% endblock %}
   </body>
 </html>
