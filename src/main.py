@@ -1,11 +1,12 @@
 # initialize our Flask application
+import logging
 from logging import getLogger, DEBUG
 
 import os
-import logging
+
 import tbot
 from flask import Flask, request, jsonify, render_template, Response
-from flask_cors import CORS  # Import flask_cors
+
 from commons import VERSION_NUMBER, LOG_LOCATION
 from components.actions.base.action import am
 from components.events.base.event import em
@@ -23,41 +24,7 @@ registered_actions = [register_action(action) for action in REGISTERED_ACTIONS]
 registered_events = [register_event(event) for event in REGISTERED_EVENTS]
 registered_links = [register_link(link, em, am) for link in REGISTERED_LINKS]
 
-# Initialize Flask app now
 app = Flask(__name__)
-
-# Function to dynamically check and set CORS origins
-def get_cors_origin(origin):
-    # Define the allowed domains
-    allowed_domains = [
-        "localhost:5000",
-        "ngrok.com",
-        "ngrok-free.app"
-    ]
-
-    # Allow specific domains and any subdomain of ngrok.com and ngrok-free.app
-    if origin:
-        for domain in allowed_domains:
-            if origin == f"http://{domain}" or origin == f"https://{domain}" or origin.endswith(f".{domain}"):
-                return origin
-
-    # Default to None if origin is not allowed
-    return None
-
-@app.after_request
-def apply_cors(response):
-    origin = request.headers.get('Origin')
-    allowed_origin = get_cors_origin(origin)
-    if allowed_origin:
-        response.headers.add('Access-Control-Allow-Origin', allowed_origin)
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        # If credentials support is needed
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
-
-# Enable CORS with a default setup
-CORS(app, resources={r"/*": {"origins": get_cors_origin}})
 
 # configure logging
 logger = get_logger(__name__)
@@ -166,11 +133,27 @@ def activate_event():
         return {'active': event.active}
 
 
+
+
 if __name__ == "__main__":
-    port = int(os.getenv("TVWB_HTTPS_PORT", "5000"))
-    if strtobool(os.getenv("TBOT_PRODUCTION", "False")):
-        serve(app, host="0.0.0.0", port=port)
-    else:
-        app.run(debug=True, host="0.0.0.0", port=port)
+    # Configure logging
+    logging.basicConfig(
+        level=logging.DEBUG if not strtobool(os.getenv("TBOT_PRODUCTION", "False")) else logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        handlers=[logging.StreamHandler()]  # Ensure logs are sent to stdout
+    )
+    
+    logger = logging.getLogger(__name__)
 
-
+    try:
+        port = int(os.getenv("TVWB_HTTPS_PORT", "5000"))
+        is_production = strtobool(os.getenv("TBOT_PRODUCTION", "False"))
+        
+        if is_production:
+            logger.info("Starting in production mode.")
+            serve(app, host="0.0.0.0", port=port)
+        else:
+            logger.info("Starting in development mode with debug.")
+            app.run(debug=True, host="0.0.0.0", port=port)
+    except Exception as e:
+        logger.exception("An error occurred while running the Flask app.")
