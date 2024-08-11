@@ -31,11 +31,11 @@
       <hr>
       <div class="mb-3">
         <label for="ngrokUrl" class="form-label">Ngrok URL</label>
-        <input type="text" class="form-control" id="ngrokUrl" placeholder="Enter ngrok URL">
+        <input type="text" class="form-control" id="ngrokUrl" value="https://tv.porenta.us//webhook" placeholder="Enter ngrok URL">
       </div>
       <div class="mb-3">
         <label for="tokenKey" class="form-label">Token Key</label>
-        <input type="text" class="form-control" id="tokenKey" placeholder="Enter token key">
+        <input type="text" class="form-control" id="tokenKey" value="WebhookReceived:fcbd3d" placeholder="Enter token key">
       </div>
       <div id="responseMessage" class="mb-3"></div> <!-- For displaying POST response -->
       {% block content %}{% endblock %}
@@ -58,8 +58,12 @@
             { 
               data: null,
               render: function(data, type, row) {
-                if (type === 'display' && row.unrealizedpnl != 0) {
-                  return '<button class="btn btn-warning close-position" data-ticker="' + row.ticker + '" data-position="' + row.position + '">Close Position</button>';
+                if (type === 'display') {
+                  if (row.unrealizedpnl != 0) {
+                    return '<button class="btn btn-warning close-position" data-ticker="' + row.ticker + '" data-position="' + row.position + '">Close Position</button>';
+                  } else if (row.position == 0) {
+                    return '<button class="btn cancel-order" data-ticker="' + row.ticker + '" style="background-color: #f74f4f; color: black;">Cancel Order</button>';
+                  }
                 }
                 return '';
               }
@@ -153,17 +157,12 @@
           ]
         });
 
-        $('#data_order').on('click', '.close-position', function () {
+        $('#data_order').on('click', '.close-position, .cancel-order', function () {
           const ticker = $(this).data('ticker');
-          const position = $(this).data('position');
-          const ngrokUrl = $('#ngrokUrl').val();
-          const tokenKey = $('#tokenKey').val();
+          const isClosePosition = $(this).hasClass('close-position');
+          const ngrokUrl = $('#ngrokUrl').val() || 'https://tv.porenta.us//webhook';
+          const tokenKey = $('#tokenKey').val() || 'WebhookReceived:fcbd3d';
           const timestamp = Date.now();
-
-          if (!ngrokUrl || !tokenKey) {
-            $('#responseMessage').html('<div class="alert alert-danger">Please enter the ngrok URL and token key.</div>');
-            return;
-          }
 
           const payload = {
             timestamp: timestamp,
@@ -173,8 +172,8 @@
             clientId: 1,
             key: tokenKey,
             contract: "stock",
-            orderRef: "cancel_all_test",
-            direction: "strategy.close_all",
+            orderRef: isClosePosition ? "cancel_all_test" : "cancel_all",
+            direction: isClosePosition ? "strategy.close_all" : "strategy.cancel_all",
             metrics: [
               { "name": "entry.limit", "value": 0 },
               { "name": "entry.stop", "value": 0 },
@@ -191,12 +190,12 @@
             contentType: 'application/json',
             data: JSON.stringify(payload),
             success: function (response) {
-              $('#responseMessage').html('<div class="alert alert-success">Position close request sent successfully. Refreshing data...</div>');
+              $('#responseMessage').html('<div class="alert alert-success">' + (isClosePosition ? 'Position close' : 'Order cancellation') + ' request sent successfully. Refreshing data...</div>');
               refreshDataTable();
             },
             error: function (jqXHR, textStatus, errorThrown) {
               let responseHtml = '<div class="alert alert-danger">';
-              responseHtml += '<h4>Failed to send position close request</h4>';
+              responseHtml += '<h4>Failed to send ' + (isClosePosition ? 'position close' : 'order cancellation') + ' request</h4>';
               responseHtml += '<p><strong>Status:</strong> ' + textStatus + '</p>';
               responseHtml += '<p><strong>Error:</strong> ' + errorThrown + '</p>';
               if (jqXHR.responseText) {
