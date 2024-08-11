@@ -68,7 +68,7 @@
               data: 'uniquekey',
               render: function(data, type) {
                 if (type === 'display') {
-                  return moment.utc(data).tz("America/New_York").format('YYYY-MM-DD HH:mm:ss');
+                  return moment.utc(data).tz("America/New_York").format('YYYY-MM-DD HH:mm:ss.SSS');
                 }
                 return data;
               }
@@ -77,7 +77,7 @@
               data: 'timestamp',
               render: function(data, type) {
                 if (type === 'display') {
-                  return moment.utc(data).tz("America/New_York").format('YYYY-MM-DD HH:mm:ss');
+                  return moment.utc(data).tz("America/New_York").format('YYYY-MM-DD HH:mm:ss.SSS');
                 }
                 return data;
               }
