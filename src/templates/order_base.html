@@ -7,6 +7,25 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.33/moment-timezone-with-data.min.js"></script>
+    <style>
+  .table-container-wrapper {
+    max-width: 1920px;
+    margin: 0 auto;
+    padding: 0 5px;
+  }
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+  #data_order {
+    width: 100%;
+  }
+  @media (min-width: 1921px) {
+    .table-container-wrapper {
+      padding: 0;
+    }
+  }
+</style>
   </head>
   <body>
     <ul class="nav nav-pills container">
@@ -38,8 +57,12 @@
         <input type="text" class="form-control" id="tokenKey" value="WebhookReceived:fcbd3d" placeholder="Enter token key">
       </div>
       <div id="responseMessage" class="mb-3"></div> <!-- For displaying POST response -->
-      {% block content %}{% endblock %}
     </div>
+    <div class="table-container-wrapper">
+  <div class="table-container">
+    {% block content %}{% endblock %}
+  </div>
+   </div>
     <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.js"></script>
