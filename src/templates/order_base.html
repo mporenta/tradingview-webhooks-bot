@@ -58,15 +58,16 @@
             { 
               data: null,
               render: function(data, type, row) {
-                if (type === 'display') {
-                  if (row.unrealizedpnl != 0) {
-                    return '<button class="btn btn-warning close-position" data-ticker="' + row.ticker + '" data-position="' + row.position + '">Close Position</button>';
-                  } else if (row.position == 0) {
-                    return '<button class="btn cancel-order" data-ticker="' + row.ticker + '" style="background-color: #f74f4f; color: black;">Cancel Order</button>';
-                  }
-                }
-                return '';
-              }
+    if (type === 'display') {
+        if (row.unrealizedpnl != 0) {
+            return '<button class="btn btn-warning close-position" data-ticker="' + row.ticker + '" data-position="' + row.position + '">Close Position</button>';
+        } else if (row.position == 0 && row.orderstatus != "Portfolio") {
+            return '<button class="btn cancel-order" data-ticker="' + row.ticker + '" style="background-color: #f74f4f; color: black;">Cancel Order</button>';
+        }
+    }
+    return '';
+}
+
             },
             { 
               data: 'uniquekey',
