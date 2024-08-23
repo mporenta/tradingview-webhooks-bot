@@ -4,7 +4,7 @@ from ib_insync import IB, util, MarketOrder
 
 # Initialize the connection to IB Gateway
 ib = IB()
-ib.connect('127.0.0.1', 7497, clientId=2)  # Replace with your actual IP and Port
+ib.connect('127.0.0.1', 4002, clientId=2)  # Replace with your actual IP and Port
 
 # Set a flag to store the initial portfolio value
 initial_portfolio_value = None
