@@ -1,4 +1,5 @@
 # Risk App
+import ib_insync
 import time
 from ib_insync import IB, util, MarketOrder
 
