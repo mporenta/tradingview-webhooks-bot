@@ -1,7 +1,7 @@
-# Risk App
 import ib_insync
 import time
 from ib_insync import IB, util, MarketOrder
+import threading
 
 # Delay to allow time for port forwarding
 time.sleep(40)
@@ -38,34 +38,38 @@ def on_update_event():
     It monitors the portfolio's profit and loss.
     """
     global initial_portfolio_value
-    account_summary = ib.accountSummary()
-    pnl_percentage = calculate_pnl(account_summary)
+    try:
+        account_summary = ib.accountSummary()
+        pnl_percentage = calculate_pnl(account_summary)
 
-    print(f"Real-time Update - Current PnL: {pnl_percentage * 100:.2f}%")
-    
-    if pnl_percentage <= loss_threshold:
-        print("Portfolio down 1% or more (via event)! Closing all positions...")
-        close_all_positions()
+        print(f"Real-time Update - Current PnL: {pnl_percentage * 100:.2f}%")
+
+        if pnl_percentage <= loss_threshold:
+            print("Portfolio down 1% or more (via event)! Closing all positions...")
+            close_all_positions()
+    except Exception as e:
+        print(f"Error in on_update_event: {e}")
 
 def poll_portfolio():
     """
     Periodically poll the portfolio's profit and loss in case real-time events are missed.
     """
     global initial_portfolio_value
-
     while True:
-        # Get the updated account summary
-        account_summary = ib.accountSummary()
-        pnl_percentage = calculate_pnl(account_summary)
+        try:
+            # Get the updated account summary
+            account_summary = ib.accountSummary()
+            pnl_percentage = calculate_pnl(account_summary)
 
-        print(f"Polling - Current PnL: {pnl_percentage * 100:.2f}%")
-        
-        # If the portfolio is down more than 1%, close all positions
-        if pnl_percentage <= loss_threshold:
-            print("Portfolio down 1% or more (via polling)! Closing all positions...")
-            close_all_positions()
-            break
+            print(f"Polling - Current PnL: {pnl_percentage * 100:.2f}%")
 
+            # If the portfolio is down more than 1%, close all positions
+            if pnl_percentage <= loss_threshold:
+                print("Portfolio down 1% or more (via polling)! Closing all positions...")
+                close_all_positions()
+                break
+        except Exception as e:
+            print(f"Error in poll_portfolio: {e}")
         # Sleep for 5 seconds before the next poll
         time.sleep(5)
 
@@ -73,27 +77,35 @@ def close_all_positions():
     """
     Close all open positions in the portfolio by sending market orders.
     """
-    positions = ib.positions()
-    for position in positions:
-        contract = position.contract
-        quantity = position.position
+    try:
+        positions = ib.positions()
+        for position in positions:
+            contract = position.contract
+            quantity = position.position
 
-        # Send a market order to close the position
-        order = MarketOrder('SELL', quantity)
-        trade = ib.placeOrder(contract, order)
-        print(f"Closing position: {contract.symbol}, Quantity: {quantity}")
-        trade.waitUntilDone()
+            # Send a market order to close the position
+            order = MarketOrder('SELL', quantity)
+            trade = ib.placeOrder(contract, order)
+            print(f"Closing position: {contract.symbol}, Quantity: {quantity}")
+            trade.waitUntilDone()
+    except Exception as e:
+        print(f"Error in close_all_positions: {e}")
 
 # Bind the update event to the function
 ib.updateEvent += on_update_event
 
 # Run polling in a separate thread to avoid blocking the event loop
-import threading
 polling_thread = threading.Thread(target=poll_portfolio)
 polling_thread.start()
 
 # Run the IB event loop (this is needed for real-time updates to work)
-ib.run()
+try:
+    ib.run()
+except Exception as e:
+    print(f"Error in IB event loop: {e}")
+
+# Wait for the polling thread to finish
+polling_thread.join()
 
 # Disconnect from IB Gateway when done
 ib.disconnect()
