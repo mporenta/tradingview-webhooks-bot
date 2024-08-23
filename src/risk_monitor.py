@@ -2,9 +2,13 @@
 import time
 from ib_insync import IB, util, MarketOrder
 
+# Delay to allow time for port forwarding
+time.sleep(40)
+
 # Initialize the connection to IB Gateway
 ib = IB()
-ib.connect('127.0.0.1', 4002, clientId=2)  # Replace with your actual IP and Port
+ib.connect('127.0.0.1', 4002, clientId=2)
+
 
 # Set a flag to store the initial portfolio value
 initial_portfolio_value = None
