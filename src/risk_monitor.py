@@ -7,8 +7,11 @@ time.sleep(40)
 
 # Initialize the connection to IB Gateway
 ib = IB()
-ib.connect('127.0.0.1', 4002, clientId=2)
-
+try:
+    ib.connect('127.0.0.1', 4002, clientId=2)
+except Exception as e:
+    print(f"Failed to connect to IB Gateway: {e}")
+    exit(1)
 
 # Set a flag to store the initial portfolio value
 initial_portfolio_value = None
