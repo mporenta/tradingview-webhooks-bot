@@ -3,9 +3,9 @@ import logging
 from logging import getLogger, DEBUG
 from flask_cors import CORS
 import os
-
+import requests
 import tbot
-from flask import Flask, request, jsonify, render_template, Response
+from flask import Flask, request, jsonify, render_template, Response, redirect
 
 from commons import VERSION_NUMBER, LOG_LOCATION
 from components.actions.base.action import am
@@ -48,7 +48,69 @@ schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
 @app.route('/portfolio')
 def portfolio():
-    return redirect('http://localhost:5001')
+    """Proxy requests to the portfolio monitoring service"""
+    try:
+        # Proxy the request to the portfolio service
+        response = requests.get('http://localhost:5001')
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers['content-type']
+        )
+    except requests.RequestException as e:
+        # Handle case where portfolio service is not available
+        return render_template(
+            'service_error.html',
+            error_message="Portfolio service is currently unavailable",
+            service_name="Portfolio Monitor"
+        ), 503
+
+# Add these routes to proxy the API calls
+@app.route('/api/current-pnl/<account_id>')
+def proxy_pnl(account_id):
+    """Proxy PnL data requests"""
+    try:
+        response = requests.get(f'http://localhost:5001/api/current-pnl/{account_id}')
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers['content-type']
+        )
+    except requests.RequestException:
+        return jsonify({
+            'status': 'error',
+            'message': 'Portfolio service unavailable'
+        }), 503
+
+@app.route('/api/positions/<account_id>')
+def proxy_positions(account_id):
+    """Proxy position data requests"""
+    try:
+        response = requests.get(f'http://localhost:5001/api/positions/{account_id}')
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers['content-type']
+        )
+    except requests.RequestException:
+        return jsonify({
+            'status': 'error',
+            'message': 'Portfolio service unavailable'
+        }), 503
+
+# Add static file proxy if needed
+@app.route('/portfolio/static/<path:filename>')
+def proxy_portfolio_static(filename):
+    """Proxy static files from portfolio service"""
+    try:
+        response = requests.get(f'http://localhost:5001/static/{filename}')
+        return Response(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers['content-type']
+        )
+    except requests.RequestException:
+        return 'Static resource unavailable', 404
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     if request.method == 'GET':
