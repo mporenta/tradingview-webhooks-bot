@@ -46,7 +46,9 @@ app.teardown_appcontext(tbot.close_connection)
 
 schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
-
+@app.route('/portfolio')
+def portfolio():
+    return redirect('http://localhost:5001')
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     if request.method == 'GET':
