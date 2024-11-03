@@ -46,23 +46,23 @@ app.teardown_appcontext(tbot.close_connection)
 
 schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
+PORTFOLIO_SERVICE_URL = 'http://127.0.0.1:5001'
+
 @app.route('/portfolio')
 def portfolio():
     """Proxy requests to the portfolio monitoring service"""
     try:
-        # Proxy the request to the portfolio service
-        response = requests.get('http://localhost:5001')
+        response = requests.get(f'{PORTFOLIO_SERVICE_URL}/')
         return Response(
             response.content,
             status=response.status_code,
             content_type=response.headers['content-type']
         )
     except requests.RequestException as e:
-        # Handle case where portfolio service is not available
+        logger.error(f"Portfolio service error: {e}")
         return render_template(
             'service_error.html',
-            error_message="Portfolio service is currently unavailable",
-            service_name="Portfolio Monitor"
+            error_message="Portfolio service is currently unavailable"
         ), 503
 
 # Add these routes to proxy the API calls
