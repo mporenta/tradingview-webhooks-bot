@@ -46,17 +46,17 @@ app.teardown_appcontext(tbot.close_connection)
 
 schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
-PORTFOLIO_SERVICE_URL = 'http://127.0.0.1:5001'
+PORTFOLIO_SERVICE_URL = 'http://pnl-monitor:5001'
+
 
 @app.route('/portfolio')
 def portfolio():
-    """Proxy requests to the portfolio monitoring service"""
     try:
         response = requests.get(f'{PORTFOLIO_SERVICE_URL}/')
         return Response(
             response.content,
             status=response.status_code,
-            content_type=response.headers['content-type']
+            content_type=response.headers.get('content-type', 'text/html')
         )
     except requests.RequestException as e:
         logger.error(f"Portfolio service error: {e}")
@@ -65,22 +65,22 @@ def portfolio():
             error_message="Portfolio service is currently unavailable"
         ), 503
 
-# Add these routes to proxy the API calls
+
 @app.route('/api/current-pnl/<account_id>')
 def proxy_pnl(account_id):
-    """Proxy PnL data requests"""
     try:
-        response = requests.get(f'http://localhost:5001/api/current-pnl/{account_id}')
+        response = requests.get(f'{PORTFOLIO_SERVICE_URL}/api/current-pnl/{account_id}')
         return Response(
             response.content,
             status=response.status_code,
-            content_type=response.headers['content-type']
+            content_type=response.headers.get('content-type', 'application/json')
         )
     except requests.RequestException:
         return jsonify({
             'status': 'error',
             'message': 'Portfolio service unavailable'
         }), 503
+
 
 @app.route('/api/positions/<account_id>')
 def proxy_positions(account_id):
