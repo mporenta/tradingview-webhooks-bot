@@ -4,6 +4,7 @@ from logging import getLogger, DEBUG
 from flask_cors import CORS
 import os
 import requests
+from dotenv import load_dotenv
 import tbot
 from flask import Flask, request, jsonify, render_template, Response, redirect
 
@@ -23,6 +24,18 @@ from waitress import serve
 registered_actions = [register_action(action) for action in REGISTERED_ACTIONS]
 registered_events = [register_event(event) for event in REGISTERED_EVENTS]
 registered_links = [register_link(link, em, am) for link in REGISTERED_LINKS]
+
+# Set the default path to the .env file in the user's home directory
+DEFAULT_ENV_FILE_PATH = os.path.expanduser("~/.env")
+
+# Check if the .env file exists at the default path; if not, use the fallback path
+if os.path.isfile(DEFAULT_ENV_FILE_PATH):
+    ENV_FILE_PATH = DEFAULT_ENV_FILE_PATH
+else:
+    ENV_FILE_PATH = "/home/tbot/.env"
+
+# Load the environment variables from the chosen .env file
+load_dotenv(dotenv_path=ENV_FILE_PATH, override=True)
 
 app = Flask(__name__)
 
@@ -46,13 +59,14 @@ app.teardown_appcontext(tbot.close_connection)
 
 schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
-PORTFOLIO_SERVICE_URL = 'http://pnl-monitor:5001'
+# Load environment variables
+portfolioURL = os.getenv("PORTFOLIO_SERVICE_URL", 'http://pnl-monitor:5001')
 
 
 @app.route('/portfolio')
 def portfolio():
     try:
-        response = requests.get(f'{PORTFOLIO_SERVICE_URL}/')
+        response = requests.get(f'{portfolioURL}/')
         return Response(
             response.content,
             status=response.status_code,
@@ -69,7 +83,7 @@ def portfolio():
 @app.route('/api/current-pnl/<account_id>')
 def proxy_pnl(account_id):
     try:
-        response = requests.get(f'{PORTFOLIO_SERVICE_URL}/api/current-pnl/{account_id}')
+        response = requests.get(f'{portfolioURL}/api/current-pnl/{account_id}')
         return Response(
             response.content,
             status=response.status_code,
@@ -100,17 +114,18 @@ def proxy_positions(account_id):
 
 # Add static file proxy if needed
 @app.route('/portfolio/static/<path:filename>')
+@app.route('/portfolio/static/<path:filename>')
 def proxy_portfolio_static(filename):
-    """Proxy static files from portfolio service"""
     try:
-        response = requests.get(f'http://localhost:5001/static/{filename}')
+        response = requests.get(f'{PORTFOLIO_SERVICE_URL}/static/{filename}')
         return Response(
             response.content,
             status=response.status_code,
-            content_type=response.headers['content-type']
+            content_type=response.headers.get('content-type', 'text/plain')
         )
     except requests.RequestException:
         return 'Static resource unavailable', 404
+
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     if request.method == 'GET':
