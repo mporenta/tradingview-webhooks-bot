@@ -60,7 +60,7 @@ app.teardown_appcontext(tbot.close_connection)
 schema_list = {"order": Order().as_json(), "position": Position().as_json()}
 
 # Load environment variables
-portfolioURL = os.getenv("PORTFOLIO_SERVICE_URL", 'http://pnl-monitor:5001')
+portfolioURL = os.getenv("PORTFOLIO_SERVICE_URL", 'http://localhost:5001')
 
 
 @app.route('/portfolio')
