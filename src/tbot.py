@@ -61,9 +61,19 @@ def get_orders():
 
 
 def get_orders_data():
-    """Get IBKR Orders for AJAX"""
-    rows = query_db("select * from TBOTORDERS")
-    return {"data": rows}
+    """Get IBKR Orders for AJAX with latest net liquidation"""
+    orders = query_db("SELECT * FROM TBOTORDERS")
+    net_liq = query_db("""
+        SELECT net_liquidation 
+        FROM ACCOUNT_SUMMARY 
+        ORDER BY timestamp DESC 
+        LIMIT 1
+    """)
+    
+    return {
+        "data": orders,
+        "net_liquidation": net_liq[0]['net_liquidation'] if net_liq else 0.0
+    }
 
 
 def get_alerts():
