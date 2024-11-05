@@ -3,6 +3,7 @@
 Reading database for Tbot on Tradingboat
 """
 import sqlite3
+import logging
 import os
 from flask import request, render_template
 from flask import g
@@ -10,7 +11,21 @@ from dotenv import load_dotenv
 
 from utils.log import get_logger
 
-logger = get_logger(__name__)
+# Create logs directory if it doesn't exist
+log_dir = os.path.dirname(os.path.abspath(__file__))
+log_file = os.path.join(log_dir, 'flask_app.log')
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler()  # Also print to console
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 # Set the default path to the .env file in the user's home directory
 DEFAULT_ENV_FILE_PATH = os.path.expanduser("~/.env")
@@ -62,15 +77,22 @@ def get_orders():
 
 def get_orders_data():
     """Get IBKR Orders for AJAX"""
-    rows = query_db("""
-        SELECT t.*, 
-               (SELECT net_liquidation 
-                FROM ACCOUNT_SUMMARY 
-                ORDER BY timestamp DESC 
-                LIMIT 1) as net_liquidation
-        FROM TBOTORDERS t
-    """)
-    return {"data": rows}
+    logger.debug("Executing get_orders_data()")
+    try:
+        rows = query_db("""
+            SELECT t.*, 
+                   (SELECT net_liquidation 
+                    FROM ACCOUNT_SUMMARY 
+                    ORDER BY timestamp DESC 
+                    LIMIT 1) as net_liquidation
+            FROM TBOTORDERS t
+        """)
+        logger.info(f"Query returned {len(rows)} rows")
+        logger.debug(f"Data: {rows}")
+        return {"data": rows}
+    except Exception as e:
+        logger.error(f"Error in get_orders_data: {str(e)}", exc_info=True)
+        return {"data": []}
 
 
 def get_alerts():
